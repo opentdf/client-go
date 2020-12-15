@@ -1,0 +1,8 @@
+/out
+*.o
+*.so
+.DS_Store
+/go-tdf3-sdk-wrapper
+opentdf-client-cpp-base/client-cpp
+wrappertest
+*.tar.gz
