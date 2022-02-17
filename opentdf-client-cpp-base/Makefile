@@ -1,5 +1,6 @@
 CLIENT_CPP_SDK_VER?=0.5.2-dcr
 CLIENT_CPP_BRANCH?=0.5.2
+BASE_IMG_TAG?='opentdf/client-cpp-base'
 BUILDX_NAME='opentdf-client-cpp-base'
 PLATFORMS='linux/amd64,linux/arm64'
 
@@ -25,13 +26,13 @@ docker-buildx-armsetup: docker-buildx-armclean
 
 .PHONY: dockerbuild
 dockerbuild: repo-clone docker-buildx-armsetup
-	@echo "Building 'virtru/opentdf-client-cpp-base:$(CLIENT_CPP_SDK_VER)' Docker image"
-	@DOCKER_BUILDKIT=1 docker buildx build --platform ${PLATFORMS} --ssh default -t virtru/opentdf-client-cpp-base:$(CLIENT_CPP_SDK_VER) .
+	@echo "Building '$(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER)' Docker image"
+	@DOCKER_BUILDKIT=1 docker buildx build --platform ${PLATFORMS} --ssh default -t $(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER) .
 
 .PHONY: dockerbuildpublish
 dockerbuildpush: dockerbuild
-	@echo "Publishing 'virtru/opentdf-client-cpp-base:$(CLIENT_CPP_SDK_VER)' to Virtru dockerhub"
-	@DOCKER_BUILDKIT=1 docker buildx build --platform ${PLATFORMS} --ssh default -t virtru/opentdf-client-cpp-base:$(CLIENT_CPP_SDK_VER) . --push
+	@echo "Publishing '$(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER)' to Dockerhub"
+	@DOCKER_BUILDKIT=1 docker buildx build --platform ${PLATFORMS} --ssh default -t $(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER) . --push
 
 #List targets in makefile
 .PHONY: list

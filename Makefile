@@ -1,5 +1,5 @@
 GO_WRAP_DOCKER_VER?=2.1.0
-GO_WRAP_DOCKER_NAME?=virtru/opentdf-client-go
+GO_WRAP_DOCKER_NAME?=opentdf/client-go
 
 .PHONY: clean
 clean:

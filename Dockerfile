@@ -1,5 +1,5 @@
 # This is to work around SDK artifact access issues.
-FROM virtru/opentdf-client-cpp-base:0.5.1-dcr AS sdkbase
+FROM opentdf/client-cpp-base:0.5.1-dcr AS sdkbase
 
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
@@ -20,4 +20,4 @@ RUN go build  -o /dist/wrappertest ./cmd/wrappertest
 
 # Build the library - Library consumers will build this library during dependency resolution,
 # but doing it here as well for the sake of example
-RUN go build -o /dist/go-tdf3-sdk-wrapper
+RUN go build -o /dist/client-go

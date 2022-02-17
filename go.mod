@@ -1,4 +1,4 @@
-module github.com/virtru/opentdf-client-go-wrapper
+module github.com/opentdf/client-go
 
 go 1.17
 
