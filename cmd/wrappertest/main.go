@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	opentdf "github.com/virtru/go-tdf3-sdk-wrapper"
+	opentdf "github.com/virtru/opentdf-client-go-wrapper"
 
 	"go.uber.org/zap"
 )
