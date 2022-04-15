@@ -1,4 +1,4 @@
-# This image does nothing but serve as a base image containing the openTDF client-cpp SDK
+# This image does nothing but serve as a base image containing the OpenTDF client-cpp SDK
 # This is to work around artifact access issues.
 #
 # Alpine would be ideal - but the client-cpp C lib complicates that
