@@ -2,6 +2,18 @@
 
 This is a light Go wrapper around the OpenTDF C++ client SDK (https://github.com/opentdf/client-cpp), via that library's C interop.
 
+## Install as a Go module
+
+Since opentdf/client-go utilizes the opentdf/client-cpp binary you will need to download the pre-built binary or build a new version.
+
+### Install with go-mod script
+
+The [go-mod script](scripts/go-mod.sh) installs the latest pre-built binaries of [opentdf/client-cpp from Conan](https://conan.io/center/opentdf-client) and sets the `CGO_CFLAGS` and `CGO_LDFLAGS` in your env so the module can install correctly.
+
+1. ☝️ Requires conan (i.e. `brew install conan`)
+1. Get binary `curl https://raw.githubusercontent.com/opentdf/client-go/HEAD/scripts/go-mod.sh | sh`
+1. Get module `go get opentdf/client-go`
+
 ## Caveats
 
 1. The OpenTDF C interop only supports encrypting files and strings, so everything has to be passed as strings (or file paths) - no streaming.
@@ -88,12 +100,7 @@ environment variables to tell `cgo` where to find those things.
 1. If you `go build` at this point, your Go program will rightly complain that `opentdf/client-go` is looking for C headers and libraries, and it can't locate them.
 1. Obtain the OpenTDF C++ SDK **for your OS/architecture**
     1. Download public release zip and set CGO_CFLAGS/CGO_LDFLAGS accordingly (see `go help environment`)
-    1. Alternatively, use the go-mod install script
-        1. Requires Conan (e.g. run `brew install conan` for macOS)
-        1. Installs the latest opentdf/client-cpp version from Conan
-        1. Sets CGO_CFLAGS/CGO_LDFLAGS in your env
-    1. Change directory to your project repo
-    1. Run `curl https://raw.githubusercontent.com/opentdf/client-go/HEAD/scripts/go-mod.sh | bash` within your repo to install 
+    1. Alternatively, use the [go-mod install script](#install-with-go-mod-script)
 1. `mkdir client-cpp`
 1. `cp $CPP_LIBRARY/src/include tdf-cpp/include`
 1. `cp $CPP_LIBRARY/src/build/lib tdf-cpp/lib`
