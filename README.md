@@ -87,6 +87,12 @@ environment variables to tell `cgo` where to find those things.
 1. `go get github.com/opentdf/client-go`
 1. If you `go build` at this point, your Go program will rightly complain that `opentdf/client-go` is looking for C headers and libraries, and it can't locate them.
 1. Download/obtain the OpenTDF C++ SDK **for your OS/architecture** (public release zip is fine, or you can use a dev build)
+    1. Alternatively use the go-mod install script
+        1. Requires Conan (run `brew install conan`)
+        1. Installs the latest opentdf/client-cpp version from Conan
+        1. Runs `go mod get opentdf/client-go`
+    1. Change directory to your project repo
+    1. Run `curl https://raw.githubusercontent.com/opentdf/client-go/HEAD/scripts/go-mod.sh | bash` within your repo to install 
 1. `mkdir client-cpp`
 1. `cp $CPP_LIBRARY/src/include tdf-cpp/include`
 1. `cp $CPP_LIBRARY/src/build/lib tdf-cpp/lib`
