@@ -29,8 +29,9 @@ PKGID=$(conan search "$VER@" -q "os=$OS AND (arch=$OS_ARCH)" | grep "Package_ID:
 [[ -z $QUIET ]] && echo "$OTDF_PREFIX Downloading $VER:$PKGID..."
 conan download "$VER:$PKGID"
 
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX Installing go mod $GO_CLIENT with CPP Flags"
-CGO_ENABLED=1 \
-CGO_LDFLAGS="-L$HOME/.conan/data/$VER/_/_/package/$PKGID/lib" \
-CGO_CFLAGS="-I$HOME/.conan/data/$VER/_/_/package/$PKGID/include" \
-go get "$GO_CLIENT"
+[[ -z $QUIET ]] && echo "$OTDF_PREFIX configuring environment with CGO/CPP Build Flags"
+export CGO_ENABLED=1 \
+export CGO_LDFLAGS="-L$HOME/.conan/data/$VER/_/_/package/$PKGID/lib" \
+export CGO_CFLAGS="-I$HOME/.conan/data/$VER/_/_/package/$PKGID/include" 
+
+[[ -z $QUIET ]] && echo "$OTDF_PREFIX CPP lib setup complete, you may now build your Go modules normally"
