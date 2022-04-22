@@ -14,6 +14,10 @@ The [go-mod script](scripts/go-mod.sh) installs the latest pre-built binaries of
 1. Get binary `curl https://raw.githubusercontent.com/opentdf/client-go/HEAD/scripts/go-mod.sh | sh`
 1. Get module `go get opentdf/client-go`
 
+### Install with building
+
+_See [steps below](#example)_
+
 ## Caveats
 
 1. The OpenTDF C interop only supports encrypting files and strings, so everything has to be passed as strings (or file paths) - no streaming.
