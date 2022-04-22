@@ -91,7 +91,7 @@ environment variables to tell `cgo` where to find those things.
     1. Alternatively, use the go-mod install script
         1. Requires Conan (e.g. run `brew install conan` for macOS)
         1. Installs the latest opentdf/client-cpp version from Conan
-        1. Runs `go mod get opentdf/client-go`
+        1. Sets CGO_CFLAGS/CGO_LDFLAGS in your env
     1. Change directory to your project repo
     1. Run `curl https://raw.githubusercontent.com/opentdf/client-go/HEAD/scripts/go-mod.sh | bash` within your repo to install 
 1. `mkdir client-cpp`
