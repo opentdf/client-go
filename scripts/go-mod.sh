@@ -52,4 +52,5 @@ export CGO_LDFLAGS="-L$HOME/.conan/data/$VER/_/_/package/$PKGID/lib" \
 export CGO_CFLAGS="-I$HOME/.conan/data/$VER/_/_/package/$PKGID/include" 
 
 log "CPP lib setup complete, you may now build your Go modules normally"
-log "E.g.       go mod get github.com/opentdf/client-go"
+log ""
+log "    go get github.com/opentdf/client-go"
