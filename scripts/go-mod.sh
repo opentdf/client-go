@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 OTDF_PREFIX="[OpenTDF Client Install]"
 GO_CLIENT=github.com/opentdf/client-go
 PKG=opentdf-client
