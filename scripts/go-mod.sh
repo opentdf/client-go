@@ -1,37 +1,56 @@
 #!/usr/bin/env sh
-OTDF_PREFIX="[OpenTDF Client Install]"
+
+# This script will install the OpenTDF CPP library and prepare the
+# environment for use with `go mod get github.com/opentdf/client-go`
+set -u
+
+abort() {
+  printf "%s\n" "$@" >&2
+  exit 1
+}
+
+log() {
+  printf "[OpenTDF Client Install] %s\n" "$@" >&2
+}
+
 GO_CLIENT=github.com/opentdf/client-go
 PKG=opentdf-client
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX Searching for $PKG CPP library in Conan..."
+log "Searching for $PKG CPP library in Conan..."
 
-if [[ -z $(which conan) ]]; then
-  echo "$OTDF_PREFIX Error: Conan is required (e.g. brew install conan)"
-  exit 0
+if [ -z "$(which conan)" ]; then
+  abort "Conan is required (e.g. brew install conan)"
 fi
 
 M_OS=$(uname -s)
-if [[ $M_OS == "Darwin" ]]; then
+if [ $M_OS = "Darwin" ]; then
   OS="Macos"
-elif [[ $M_OS == "Linux" ]]; then
+elif [ $M_OS = "Linux" ]; then
   OS="Linux"
 else
-  echo "$OTDF_PREFIX Error: OS $M_OS is not supported"
-  exit 0
+  abort "OS $M_OS is not supported"
 fi
 OS_ARCH=$(uname -a | rev | cut -d" " -f1 | rev)
 
 VER=$(conan search $PKG -r all | awk 'END{print}')
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX Found $VER"
+log "Found $VER"
 
-PKGID=$(conan search "$VER@" -q "os=$OS AND (arch=$OS_ARCH)" | grep "Package_ID: " | rev | cut -d" " -f1 | rev)
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX Found Package ID $PKGID"
+PKGID=$(
+  conan search "$VER@" -q "os=$OS AND (arch=$OS_ARCH)" |
+  grep "Package_ID: " |
+  rev |
+  cut -d" " -f1 |
+  rev
+)
+log "Found Package ID $PKGID"
 
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX Downloading $VER:$PKGID..."
+log "Downloading $VER:$PKGID..."
 conan download "$VER:$PKGID"
 
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX configuring environment with CGO/CPP Build Flags"
+log "Installing go mod $GO_CLIENT with CPP Flags"
 export CGO_ENABLED=1 \
 export CGO_LDFLAGS="-L$HOME/.conan/data/$VER/_/_/package/$PKGID/lib" \
 export CGO_CFLAGS="-I$HOME/.conan/data/$VER/_/_/package/$PKGID/include" 
 
-[[ -z $QUIET ]] && echo "$OTDF_PREFIX CPP lib setup complete, you may now build your Go modules normally"
+log "CPP lib setup complete, you may now build your Go modules normally"
+log ""
+log "    go get github.com/opentdf/client-go"
