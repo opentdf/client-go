@@ -1,9 +1,16 @@
 # This image does nothing but serve as a base image containing the OpenTDF client-cpp SDK
-# This is to work around artifact access issues.
+# This is to work around
+# - artifact access issues
+# - to easily generate a arm64 and amd64 build for use in containers (ubuntu base has both arm64 and amd64 variants).
 #
 # Alpine would be ideal - but the client-cpp C lib complicates that
 # as we don't have a `musl` build yet
-FROM conanio/gcc8-ubuntu16.04:1.43.0 AS builder
+FROM ubuntu:20.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y build-essential cmake pip
+
+RUN pip install conan
 
 WORKDIR /build
 

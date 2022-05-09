@@ -1,5 +1,5 @@
-CLIENT_CPP_SDK_VER?=0.5.2-dcr
-CLIENT_CPP_BRANCH?=0.5.2
+CLIENT_CPP_SDK_VER?=0.7.2
+CLIENT_CPP_BRANCH?=0.7.2
 BASE_IMG_TAG?='opentdf/client-cpp-base'
 BUILDX_NAME='opentdf-client-cpp-base'
 PLATFORMS='linux/amd64,linux/arm64'
@@ -30,7 +30,7 @@ dockerbuild: repo-clone docker-buildx-armsetup
 	@DOCKER_BUILDKIT=1 docker buildx build --platform ${PLATFORMS} --ssh default -t $(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER) .
 
 .PHONY: dockerbuildpublish
-dockerbuildpush: dockerbuild
+dockerbuildpush: repo-clone docker-buildx-armsetup
 	@echo "Publishing '$(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER)' to Dockerhub"
 	@DOCKER_BUILDKIT=1 docker buildx build --platform ${PLATFORMS} --ssh default -t $(BASE_IMG_TAG):$(CLIENT_CPP_SDK_VER) . --push
 
