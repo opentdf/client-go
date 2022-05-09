@@ -1,6 +1,7 @@
-CLIENT_CPP_SDK_VER?=0.7.2
+CLIENT_CPP_SDK_VER?=0.7.2-r1
 CLIENT_CPP_BRANCH?=0.7.2
-BASE_IMG_TAG?='opentdf/client-cpp-base'
+# This should be `opentdf/client-cpp-base`, if we decide to create that Docker repo/depending on how we do CI
+BASE_IMG_TAG?='virtru/client-cpp-base'
 BUILDX_NAME='opentdf-client-cpp-base'
 PLATFORMS='linux/amd64,linux/arm64'
 

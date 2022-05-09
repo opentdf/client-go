@@ -22,7 +22,7 @@ RUN conan install . --build=missing
 
 RUN sh build-all.sh
 
-FROM golang:1.17-buster
+FROM golang:1.17-bullseye
 
 COPY --chown=0:0 --from=builder /build/client-cpp/src/build/lib /build/tdf-client/lib
 COPY --chown=0:0 --from=builder /build/client-cpp/src/lib/include /build/tdf-client/include

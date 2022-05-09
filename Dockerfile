@@ -1,5 +1,5 @@
 # This is to work around SDK artifact access issues.
-FROM opentdf/client-cpp-base:0.5.1-dcr AS sdkbase
+FROM virtru/client-cpp-base:0.7.2-r1 AS sdkbase
 
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
