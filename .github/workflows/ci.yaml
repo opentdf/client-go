@@ -30,7 +30,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           build-args: |-
-            CLIENT_CPP_VERSION=$CLIENT_CPP_VERSION
+            CLIENT_CPP_VERSION=${{ env.CLIENT_CPP_VERSION }}
           context: ./
           file: ./Dockerfile.example
           platforms: ${{ env.CONTAINER_ARCHS }}
