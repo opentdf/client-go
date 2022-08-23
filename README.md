@@ -7,8 +7,9 @@ This is a light Go wrapper around the OpenTDF C++ client SDK (https://github.com
 Since `opentdf/client-go` depends on the [opentdf/client-cpp](https://github.com/opentdf/client-cpp) binary, the library binaries and include files of that library
 must be present in your Go environment before you can `go build` this client, or anything that depends on it, and `CGO_CFLAGS` and `CGO_LDFLAGS` must be set accordingly.
 
-See [Dockerfile.example](./Dockerfile.example) for a complete, working example of what steps are required to install `client-cpp` and then build a Go project that uses this library in a clean environment,
-but nominally the steps are: 
+See [Dockerfile.example](./Dockerfile.example) for a complete, working example of what steps are required to install `client-cpp` and then build a Go project that uses this library in a clean environment.
+
+Nominally, the steps are: 
 1. Install conan (i.e. `brew install conan`)
 1. Install a [`client-cpp`](https://github.com/opentdf/client-cpp) release (`conan install opentdf-client/1.1.3@ --build=missing -g deploy -if /my-workdir/client-cpp`)
 1. ```sh
@@ -16,6 +17,7 @@ but nominally the steps are:
     export CGO_CFLAGS="-I/my-workdir/client-cpp/opentdf-client/include"
     export CGO_ENABLED=1```
 1. Install `client-go` module normally (`go get opentdf/client-go`)
+1. Since `client-go` depends on a C++ library, platform support is not the same as a pure Go program, and is constrained by whatever platforms the underlying C++ `client-cpp` library supports (currently linux and macOS amd64+arm64)
 
 ## Caveats
 
