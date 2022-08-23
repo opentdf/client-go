@@ -4,19 +4,18 @@ This is a light Go wrapper around the OpenTDF C++ client SDK (https://github.com
 
 ## Install as a Go module
 
-Since opentdf/client-go utilizes the opentdf/client-cpp binary you will need to download the pre-built binary or build a new version.
+Since `opentdf/client-go` depends on the [opentdf/client-cpp](https://github.com/opentdf/client-cpp) binary, the library binaries and include files of that library
+must be present in your Go environment before you can `go build` this client, or anything that depends on it, and `CGO_CFLAGS` and `CGO_LDFLAGS` must be set accordingly.
 
-### Install with go-mod script
-
-The [go-mod script](scripts/go-mod.sh) installs the latest pre-built binaries of [opentdf/client-cpp from Conan](https://conan.io/center/opentdf-client) and sets the `CGO_CFLAGS` and `CGO_LDFLAGS` in your env so the module can install correctly.
-
-1. ☝️ Requires conan (i.e. `brew install conan`)
-1. Get binary `curl https://raw.githubusercontent.com/opentdf/client-go/HEAD/scripts/go-mod.sh | sh`
-1. Get module `go get opentdf/client-go`
-
-### Install with building
-
-_See [steps below](#example)_
+See [Dockerfile.example](./Dockerfile.example) for a complete, working example of what steps are required to install `client-cpp` and then build a Go project that uses this library in a clean environment,
+but nominally the steps are: 
+1. Install conan (i.e. `brew install conan`)
+1. Install a [`client-cpp`](https://github.com/opentdf/client-cpp) release (`conan install opentdf-client/1.1.3@ --build=missing -g deploy -if /my-workdir/client-cpp`)
+1. ```sh
+    export CGO_LDFLAGS="-L/my-workdir/client-cpp/opentdf-client/lib"
+    export CGO_CFLAGS="-I/my-workdir/client-cpp/opentdf-client/include"
+    export CGO_ENABLED=1```
+1. Install `client-go` module normally (`go get opentdf/client-go`)
 
 ## Caveats
 
@@ -25,8 +24,6 @@ _See [steps below](#example)_
 1. Go is very fast - but Go->C calls are 9X slower than pure Go calls, due to memory copying - to preserve safety, Go does not share memory space with C code. The Go interop is faster than the Python wrapper/JS SDK, but far slower than a pure Go SDK, or direct use of the C++ SDK.
 
 1. Go code can easily be compiled/cross compiled to over a dozen different platforms and architectures out of the box with no extra work or extra tooling, and dependencies are always dynamically compiled when fetched - C cannot support any of this, so by inference Go code that depends on C code loses the ability to be easily cross-compiled and distributed.
-
-1. Right now this only builds if the OpenTDF CPP static library and header files are in the right spots - you will need to set that up yourself if you plan to do builds outside of the provided Docker build environment, see [opentdf-client-cpp-base/Dockerfile](opentdf-client-cpp-base/Dockerfile) for an example of how that's done.
 
 ## Highly unscientific performance numbers
 
@@ -53,13 +50,6 @@ _See [steps below](#example)_
     Operation decrypt #5: 511.418639ms
     Round trip decrypted: holla at ya boi2021/02/24 17:13:13
   
-## Building
-
-1. `git clone` this repo
-1. Run `make dockerbuild` (Builds sample Go programs against the `client-go` wrapper, using a special container preloaded with the `client-cpp` static libraries and headers)
-
-Since dev builds of the OpenTDF C++ client SDK are not published at the time of this writing (soon), we manually clone, build, and pack the SDK into a base image in [./opentdf-client-cpp-base](./opentdf-client-cpp-base), publish that to our internal repo, and use that as the base image for Go builds that depend on the C++ SDK, for now.
-
 ## Testing
 
 For now there's a simple wrapper exerciser binary you can build in `cmd/wrapper`
@@ -83,37 +73,20 @@ export TDF_USER="dan@gmail.com"
 export TDF_EXTERNALTOKEN="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJle..."
 ```
 
-## Using as a "normal" Go dependency
+## Building this library locally
 
-Since this is not a pure Go library and depends on the OpenTDF C wrapper (which ships with OpenTDF's C++ SDK), when fetching and building the Go
-package as a dependency you must tell `cgo` where to find the OpenTDF C header files and OpenTDF static library.
+Since `opentdf/client-go` depends on the [opentdf/client-cpp](https://github.com/opentdf/client-cpp) binary, the library binaries and include files of that library
+must be present in your Go environment before you can `go build` this client, or anything that depends on it, and `CGO_CFLAGS` and `CGO_LDFLAGS` must be set accordingly.
 
-We hide some of this by generating a Docker image with the correct headers and libraries (see [./opentdf-client-cpp-base](./opentdf-client-cpp-base)), but if you don't want to use that as your app's base image, or want to build this outside of docker, it gets a little more complicated - you have to fetch the headers _and correct C libraries for your platform_, and use the
-
-- `CGO_LDFLAGS`
-- `CGO_CFLAGS`
-
-environment variables to tell `cgo` where to find those things.
-
-### Example
-
-1. `mkdir my-go-project`
-1. `cd my-go-project && go mod init github.com/myorg/my-go-project`
-1. At this point you have a normal Go project, but you wanna bring in `opentdf/client-go` as a dependency
-1. `go get github.com/opentdf/client-go`
-1. If you `go build` at this point, your Go program will rightly complain that `opentdf/client-go` is looking for C headers and libraries, and it can't locate them.
-1. Obtain the OpenTDF C++ SDK **for your OS/architecture**
-    1. Download public release zip and set CGO_CFLAGS/CGO_LDFLAGS accordingly (see `go help environment`)
-    1. Alternatively, use the [go-mod install script](#install-with-go-mod-script)
-1. `mkdir client-cpp`
-1. `cp $CPP_LIBRARY/src/include tdf-cpp/include`
-1. `cp $CPP_LIBRARY/src/build/lib tdf-cpp/lib`
-1. Now run `CGO_ENABLED=1 CGO_LDFLAGS="-L./tdf-cpp/lib" CGO_CFLAGS="-I./tdf-cpp/include" go build`
-1. Your Go app should build
-
-> An example Dockerfile demonstrating a complete build environment can be found [here](./Dockerfile).
->
-> You can build this Docker image by running `make dockerbuild`
+See [Dockerfile.example](./Dockerfile.example) for a complete, working example of what steps are required to install `client-cpp` and then build a Go project that uses this library in a clean environment,
+but nominally the steps are: 
+1. Install conan (i.e. `brew install conan`)
+1. Install a [`client-cpp`](https://github.com/opentdf/client-cpp) release (`conan install opentdf-client/1.1.3@ --build=missing -g deploy -if /my-workdir/client-cpp`)
+1. ```sh
+    export CGO_LDFLAGS="-L/my-workdir/client-cpp/opentdf-client/lib"
+    export CGO_CFLAGS="-I/my-workdir/client-cpp/opentdf-client/include"
+    export CGO_ENABLED=1```
+1. Build from the repo root like normal (`go build .`)
 
 ## Example Code
 

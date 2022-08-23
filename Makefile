@@ -1,22 +1,33 @@
-GO_WRAP_DOCKER_VER?=2.1.0
-GO_WRAP_DOCKER_NAME?=opentdf/client-go
+IMAGEVERSION?=1.1.3
+IMAGETAG?=opentdf/client-go
+PLATFORMS?=linux/arm64,linux/amd64
 
 .PHONY: clean
 clean:
 	@echo "Removing vendored Go module folder"
 	@rm -rf vendor
 
-.PHONY: docker-build
-dockerbuild: clean
-	@echo "Vendoring Go module dependencies outside of the container, for convenience"
-	@go mod vendor
-	@echo "Building '$(GO_WRAP_DOCKER_NAME):$(GO_WRAP_DOCKER_VER)' Docker image"
-	@docker build -t $(GO_WRAP_DOCKER_NAME):$(GO_WRAP_DOCKER_VER) .
+# Set up a custom buildx context that supports building a multi-arch image
+.PHONY: docker-buildx-armsetup
+docker-buildx-armsetup:
+    # Try to create builder context, ignoring failure if one already exists
+	docker buildx create --name client-go-cross || true
+	docker buildx use client-go-cross
+	docker buildx inspect --bootstrap
 
-.PHONY: docker-publish
-dockerbuildpublish: docker-build
-	@echo "Publishing '$(GO_WRAP_DOCKER_NAME):$(GO_WRAP_DOCKER_VER)' to Vitru Dockerhub"
-	@docker push $(GO_WRAP_DOCKER_NAME):$(GO_WRAP_DOCKER_VER)
+# This will build (in parallel) Docker images for every arch in PLATFORMS
+# using Docker's crossbuild environment: https://docs.docker.com/build/buildx/multiplatform-images/
+.PHONY: dockerbuild
+dockerbuild: clean docker-buildx-armsetup
+	@echo "Building '$(IMAGETAG):$(IMAGEVERSION)' Docker image"
+	@DOCKER_BUILDKIT=1 docker buildx build --platform $(PLATFORMS) -t $(IMAGETAG):$(IMAGEVERSION) .
+
+# This will build AND PUSH (in parallel) Docker images for every arch in PLATFORMS
+# using Docker's crossbuild environment: https://docs.docker.com/build/buildx/multiplatform-images/
+.PHONY: dockerbuildpush
+dockerbuildpush: clean docker-buildx-armsetup
+	@echo "Publishing '$(IMAGETAG):$(IMAGEVERSION)' to Dockerhub"
+	@DOCKER_BUILDKIT=1 docker buildx build --platform $(PLATFORMS) -t $(IMAGETAG):$(IMAGEVERSION) --push .
 
 #List targets in makefile
 .PHONY: list
