@@ -61,7 +61,7 @@ func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK opentd
 		"https://example.com/attr/COI/value/PRF",
 	)
 
-	res, _ := tdfSDK.EncryptString("holla at ya boi", dataAttr)
+	res, _ := tdfSDK.EncryptString("holla at ya boi", "<some-metadata>", dataAttr)
 	logger.Sugar().Debugf("Got TDF encrypted payload %s", string(res))
 	duration(msg, timeElapsed)
 

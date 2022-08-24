@@ -82,8 +82,8 @@ type TDFPolicyBody struct {
 
 type TDFClient interface {
 	Close()
-	EncryptFile(inFile, outFile string, dataAttribs []string) error
-	EncryptString(data string, dataAttribs []string) ([]byte, error)
+	EncryptFile(inFile, outFile, metadata string, dataAttribs []string) error
+	EncryptString(data, metadata string, dataAttribs []string) ([]byte, error)
 	DecryptTDF(data []byte) (string, error)
 	GetPolicyFromTDF(data []byte) (*TDFPolicy, error)
 }
@@ -122,9 +122,10 @@ func (tdfsdk *tdfCInterop) Close() {
 	}
 }
 
-//EncryptString takes a Go string, a format (ZIP or HTML), and a policy object, and encrypts the string
-func (tdfsdk *tdfCInterop) EncryptString(data string, dataAttribs []string) ([]byte, error) {
-	return tdfsdk.encryptString(data, tdfsdk.kasURL, dataAttribs)
+//EncryptString takes a Go string, a format (ZIP or HTML), a policy object, and an (optional, can be empty) string of metadata,
+//and encrypts the string + metadata with the policy.
+func (tdfsdk *tdfCInterop) EncryptString(data, metadata string, dataAttribs []string) ([]byte, error) {
+	return tdfsdk.encryptString(data, tdfsdk.kasURL, metadata, dataAttribs)
 }
 
 func (tdfsdk *tdfCInterop) DecryptTDF(data []byte) (string, error) {
@@ -147,8 +148,8 @@ func (tdfsdk *tdfCInterop) GetPolicyFromTDF(data []byte) (*TDFPolicy, error) {
 	return &tdfPolicy, nil
 }
 
-func (tdfsdk *tdfCInterop) EncryptFile(inFile, outFile string, dataAttribs []string) error {
-	return tdfsdk.encryptFile(inFile, outFile, tdfsdk.kasURL, dataAttribs)
+func (tdfsdk *tdfCInterop) EncryptFile(inFile, outFile, metadata string, dataAttribs []string) error {
+	return tdfsdk.encryptFile(inFile, outFile, tdfsdk.kasURL, metadata, dataAttribs)
 }
 
 func (tdfsdk *tdfCInterop) initializeOIDCClient(
@@ -213,7 +214,7 @@ func (tdfsdk *tdfCInterop) initializeOIDCClientTokenExchange(
 	tdfsdk.logger.Debug("TDF C SDK initialized")
 }
 
-func (tdfsdk *tdfCInterop) encryptFile(inFilename, outFilename, kasURL string, dataAttribs []string) error {
+func (tdfsdk *tdfCInterop) encryptFile(inFilename, outFilename, kasURL, metadata string, dataAttribs []string) error {
 	inFile := C.CString(inFilename)
 	outFile := C.CString(outFilename)
 	defer C.free(unsafe.Pointer(inFile))
@@ -233,6 +234,17 @@ func (tdfsdk *tdfCInterop) encryptFile(inFilename, outFilename, kasURL string, d
 		}
 	}()
 
+	//Only bother to set metadata if we have any to set.
+	if metadata != "" {
+		inMetadata := []byte(metadata)
+		inMetSize, inMetPtr := convertGoBufToCBuf(inMetadata)
+		err := tdfsdk.checkTDFStatus(C.TDFSetEncryptedMetadata(tdfsdk.sdkPtr, inMetPtr, (C.uint)(inMetSize)), "TDFSetEncryptedMetadata")
+		if err != nil {
+			tdfsdk.logger.Errorf("Error setting encrypted metadata string before encrypt! Error was %s", err)
+			return err
+		}
+	}
+
 	err := tdfsdk.checkTDFStatus(C.TDFEncryptFile(tdfsdk.sdkPtr, storagePtr, outFile), "TDFEncryptFile")
 	if err != nil {
 		tdfsdk.logger.Errorf("Error encrypting file!")
@@ -242,9 +254,8 @@ func (tdfsdk *tdfCInterop) encryptFile(inFilename, outFilename, kasURL string, d
 	return nil
 }
 
-func (tdfsdk *tdfCInterop) encryptString(data, kasURL string, dataAttribs []string) ([]byte, error) {
+func (tdfsdk *tdfCInterop) encryptString(data, kasURL, metadata string, dataAttribs []string) ([]byte, error) {
 	inData := []byte(data)
-
 	inSize, inPtr := convertGoBufToCBuf(inData)
 
 	storagePtr := C.TDFCreateTDFStorageStringType(inPtr, (C.uint)(inSize))
@@ -260,6 +271,17 @@ func (tdfsdk *tdfCInterop) encryptString(data, kasURL string, dataAttribs []stri
 			f()
 		}
 	}()
+
+	//Only bother to set metadata if we have any to set.
+	if metadata != "" {
+		inMetadata := []byte(metadata)
+		inMetSize, inMetPtr := convertGoBufToCBuf(inMetadata)
+		err := tdfsdk.checkTDFStatus(C.TDFSetEncryptedMetadata(tdfsdk.sdkPtr, inMetPtr, (C.uint)(inMetSize)), "TDFSetEncryptedMetadata")
+		if err != nil {
+			tdfsdk.logger.Errorf("Error setting encrypted metadata string before encrypt! Error was %s", err)
+			return nil, err
+		}
+	}
 
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
@@ -318,6 +340,36 @@ func (tdfsdk *tdfCInterop) decryptBytes(data []byte) (string, error) {
 	C.free(unsafe.Pointer(outPtr))
 	decStr := string(strBuf)
 	tdfsdk.logger.Debugf("Got buffer %s with length %d", decStr, C.int(outLen))
+	return decStr, nil
+}
+
+func (tdfsdk *tdfCInterop) getEncryptedMetadataFromTDFBytes(data []byte) (string, error) {
+
+	size, ptr := convertGoBufToCBuf(data)
+
+	var outPtr C.TDFBytesPtr
+	var outSize C.TDFBytesLength
+
+	storagePtr := C.TDFCreateTDFStorageStringType(ptr, (C.uint)(size))
+	if storagePtr == nil {
+		tdfsdk.logger.Fatal("Could not initialize TDF C SDK TDF storage object!")
+	}
+	defer C.TDFDestroyStorage(storagePtr)
+
+	err := tdfsdk.checkTDFStatus(C.TDFGetEncryptedMetadata(tdfsdk.sdkPtr, storagePtr, &outPtr, &outSize),
+		"TDFGetPolicy")
+	if err != nil {
+		tdfsdk.logger.Errorf("Error getting policy string from TDF bytes!, error was %s", err)
+		return "", err
+	}
+
+	outLen := C.int(C.uint(outSize))
+	strBuf := C.GoBytes(unsafe.Pointer(outPtr), outLen)
+	//GoBytes copies data from C memspace to Go memspace, so we're free to free the
+	//C memspace here
+	C.free(unsafe.Pointer(outPtr))
+	decStr := string(strBuf)
+	tdfsdk.logger.Debugf("Got encrypted metadata string buffer %s with length %d", decStr, C.int(outLen))
 	return decStr, nil
 }
 
