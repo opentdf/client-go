@@ -296,9 +296,15 @@ func (tdfsdk *tdfCInterop) decryptBytes(data []byte) (string, error) {
 
 	size, ptr := convertGoBufToCBuf(data)
 
+	storagePtr := C.TDFCreateTDFStorageStringType(ptr, (C.uint)(size))
+	if storagePtr == nil {
+		tdfsdk.logger.Fatal("Could not initialize TDF C SDK TDF storage object!")
+	}
+	defer C.TDFDestroyStorage(storagePtr)
+
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
-	err := tdfsdk.checkTDFStatus(C.TDFDecryptString(tdfsdk.sdkPtr, ptr, (C.uint)(size), &outPtr, &outSize),
+	err := tdfsdk.checkTDFStatus(C.TDFDecryptString(tdfsdk.sdkPtr, storagePtr, &outPtr, &outSize),
 		"TDFDecryptString")
 	if err != nil {
 		tdfsdk.logger.Errorf("Error decrypting bytes!, error was %s", err)
@@ -321,7 +327,14 @@ func (tdfsdk *tdfCInterop) getPolicyStringFromTDFBytes(data []byte) (string, err
 
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
-	err := tdfsdk.checkTDFStatus(C.TDFGetPolicy(tdfsdk.sdkPtr, ptr, (C.uint)(size), &outPtr, &outSize),
+
+	storagePtr := C.TDFCreateTDFStorageStringType(ptr, (C.uint)(size))
+	if storagePtr == nil {
+		tdfsdk.logger.Fatal("Could not initialize TDF C SDK TDF storage object!")
+	}
+	defer C.TDFDestroyStorage(storagePtr)
+
+	err := tdfsdk.checkTDFStatus(C.TDFGetPolicy(tdfsdk.sdkPtr, storagePtr, &outPtr, &outSize),
 		"TDFGetPolicy")
 	if err != nil {
 		tdfsdk.logger.Errorf("Error getting policy string from TDF bytes!, error was %s", err)

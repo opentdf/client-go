@@ -1,0 +1,49 @@
+# This dockerfile shows how to install the C++ OpenTDF library, and then perform a
+# `go build` on Go dependencies that need that C++ library.
+#
+# The `client-cpp` library binary and include files must be available to Go
+# during the `go build` step. As `client-cpp` doesn't have prebuilt binaries for every platform,
+# we build it ourselves here, as a precondition to the `go build` step.
+
+FROM python:3.9-bullseye AS builder
+ARG CLIENT_CPP_BRANCH=main
+WORKDIR /build
+
+RUN git clone -b ${CLIENT_CPP_BRANCH} 'https://github.com/opentdf/client-cpp.git'
+
+WORKDIR client-cpp/src/
+
+RUN apt-get update && apt-get install -y cmake
+RUN pip install conan
+
+RUN conan install . --build=missing
+
+RUN sh build-all.sh
+
+FROM golang:1.19-bullseye
+
+COPY --chown=0:0 --from=builder /build/client-cpp/src/build/lib /build/tdf-client/lib
+COPY --chown=0:0 --from=builder /build/client-cpp/src/lib/include /build/tdf-client/include
+
+
+ENV GO111MODULE=on \
+    CGO_ENABLED=1 \
+    GOOS=linux \
+    CGO_LDFLAGS="-L/build/tdf-client/lib" \
+    CGO_CFLAGS="-I/build/tdf-client/include"
+
+WORKDIR /build
+
+COPY . .
+
+# Let's create a /dist folder containing just the files necessary for runtime.
+# Later, it will be copied as the / (root) of the output image.
+RUN mkdir /dist
+
+#Build the demo executable - can be skipped if not needed
+RUN go build  -o /dist/wrappertest ./cmd/wrappertest
+
+# Build the library - Library consumers will build this library implicitly as part of
+# `go get -u github.com/opentdf/client-go` (assuming CGO_CFLAGS and CGO_LDFLAGS point at the C++ resources in that environment)
+# but doing it explicitly here as well for the sake of example
+RUN go build -o /dist/client-go
