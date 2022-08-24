@@ -1,10 +1,5 @@
-# This dockerfile shows how to install the C++ OpenTDF library, and then perform a
-# `go build` on Go dependencies that need that C++ library.
-#
-# The `client-cpp` library binary and include files must be available to Go
-# during the `go build` step. As `client-cpp` doesn't have prebuilt binaries for every platform,
-# we build it ourselves here, as a precondition to the `go build` step.
-
+# This dockerfile is just like `Dockerfile.example`, except it allows for easily building against an upstream
+# Git branch of `client-cpp`, rather than a published Conan release, which is handy for development.
 FROM python:3.9-bullseye AS builder
 ARG CLIENT_CPP_BRANCH=main
 WORKDIR /build
