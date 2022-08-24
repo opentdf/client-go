@@ -90,6 +90,8 @@ but nominally the steps are:
     export CGO_ENABLED=1```
 1. Build from the repo root like normal (`go build .`)
 
+Additionally, there is a sample developer Dockerfile [Dockerfile.dev](./Dockerfile.dev) which supports doing test builds of this Go library against arbitrary upstream tags/branches of [opentdf/client-cpp](https://github.com/opentdf/client-cpp)
+
 ## Example Code
 
 See [cmd/wrappertest/main.go](./cmd/wrappertest/main.go)
