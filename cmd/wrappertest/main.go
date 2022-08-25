@@ -61,14 +61,16 @@ func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK opentd
 		"https://example.com/attr/COI/value/PRF",
 	)
 
-	res, _ := tdfSDK.EncryptString("holla at ya boi", "<some-metadata>", dataAttr)
+	stringStore, _ := opentdf.NewTDFStorageString("holla at ya boi")
+	res, _ := tdfSDK.EncryptString(stringStore, "<some-metadata>", dataAttr)
 	logger.Sugar().Debugf("Got TDF encrypted payload %s", string(res))
 	duration(msg, timeElapsed)
 
 	time.Sleep(5 * time.Second)
 
 	msg, timeElapsed = track(fmt.Sprintf("decrypt #%d", iter))
-	decRes, _ := tdfSDK.DecryptTDF(res)
+	resStore, _ := opentdf.NewTDFStorageString(string(res))
+	decRes, _ := tdfSDK.DecryptTDF(resStore)
 	duration(msg, timeElapsed)
 	fmt.Printf("Round trip decrypted: %s", decRes)
 }
