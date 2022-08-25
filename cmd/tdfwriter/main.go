@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	opentdf "github.com/opentdf/client-go"
+	"github.com/opentdf/client-go"
 
 	"go.uber.org/zap"
 )
@@ -44,20 +44,24 @@ func encryptTDF(logger *zap.Logger, dataString, outPath string, dataAttr []strin
 	idpURL := os.Getenv("TDF_OIDC_URL")
 	externalToken := os.Getenv("TDF_EXTERNALTOKEN")
 
-	var tdfSDK opentdf.TDFClient
+	var tdfSDK client.TDFClient
 
 	if externalToken != "" {
-		tdfSDK = opentdf.NewTDFClientOIDCTokenExchange(user, orgName, clientId, clientSecret, externalToken, idpURL, kasURL, logger)
+		tdfSDK = client.NewTDFClientOIDCTokenExchange(user, orgName, clientId, clientSecret, externalToken, idpURL, kasURL, logger)
 	} else {
-		tdfSDK = opentdf.NewTDFClientOIDC(user, orgName, clientId, clientSecret, idpURL, kasURL, logger)
+		tdfSDK = client.NewTDFClientOIDC(user, orgName, clientId, clientSecret, idpURL, kasURL, logger)
 	}
 
-	res, _ := tdfSDK.EncryptString(dataString, dataAttr)
+	stringStore, _ := client.NewTDFStorageString(dataString)
+	defer stringStore.Close()
+	res, _ := tdfSDK.EncryptToString(stringStore, "", dataAttr)
 	logger.Sugar().Debugf("Got TDF encrypted payload %s", string(res))
 	writeFile(outPath, string(res))
 
 	//Decrypt as well, just to validate the flow/demo
-	decRes, _ := tdfSDK.DecryptTDF(res)
+	resStore, _ := client.NewTDFStorageString(string(res))
+	defer resStore.Close()
+	decRes, _ := tdfSDK.DecryptTDF(resStore)
 	fmt.Printf("Round trip decrypted: %s", decRes)
 	tdfSDK.Close()
 }

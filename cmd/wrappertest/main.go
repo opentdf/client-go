@@ -18,6 +18,8 @@ func main() {
 		log.Fatalf("Logger initialization failed!")
 	}
 
+
+	//nolint:errcheck
 	defer logger.Sync()
 
 	//slammer(logger)
@@ -62,6 +64,7 @@ func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK client
 	)
 
 	stringStore, _ := client.NewTDFStorageString("holla at ya boi")
+	defer stringStore.Close()
 	res, _ := tdfSDK.EncryptToString(stringStore, "<some-metadata>", dataAttr)
 	logger.Sugar().Debugf("Got TDF encrypted payload %s", string(res))
 	duration(msg, timeElapsed)
@@ -70,6 +73,7 @@ func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK client
 
 	msg, timeElapsed = track(fmt.Sprintf("decrypt #%d", iter))
 	resStore, _ := client.NewTDFStorageString(string(res))
+	defer resStore.Close()
 	decRes, _ := tdfSDK.DecryptTDF(resStore)
 	duration(msg, timeElapsed)
 	fmt.Printf("Round trip decrypted: %s", decRes)
