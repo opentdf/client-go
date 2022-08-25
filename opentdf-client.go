@@ -1,4 +1,4 @@
-package opentdf
+package client
 
 import (
 	"encoding/json"
