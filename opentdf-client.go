@@ -96,6 +96,26 @@ type TDFClient interface {
 	GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error)
 }
 
+func NewTDFStorageS3(s3url, awsAccessKeyID, awsSecretKey, awsRegion string) (*TDFStorage, error) {
+	inS3Url := C.CString(s3url)
+	inKeyId := C.CString(awsAccessKeyID)
+	inSecretKey := C.CString(awsSecretKey)
+	inRegion := C.CString(awsRegion)
+	thingsToFree := []func(){
+		func() { C.free(unsafe.Pointer(inS3Url)) },
+		func() { C.free(unsafe.Pointer(inKeyId)) },
+		func() { C.free(unsafe.Pointer(inSecretKey)) },
+		func() { C.free(unsafe.Pointer(inRegion)) },
+	}
+
+	storagePtr := C.TDFCreateTDFStorageS3Type(inS3Url, inKeyId, inSecretKey, inRegion)
+	if storagePtr == nil {
+		return nil, errors.New("Could not initialize TDF C SDK TDF S3 storage object!")
+	}
+	storage := TDFStorage{storagePtr, thingsToFree}
+	return &storage, nil
+}
+
 func NewTDFStorageFile(filepath string) (*TDFStorage, error) {
 
 	inFile := C.CString(filepath)
