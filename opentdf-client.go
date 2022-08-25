@@ -92,6 +92,7 @@ type TDFClient interface {
 	Close()
 	EncryptToFile(data *TDFStorage, outFile, metadata string, dataAttribs []string) error
 	EncryptToString(data *TDFStorage, metadata string, dataAttribs []string) ([]byte, error)
+	GetEncryptedMetadata(data *TDFStorage) (string, error)
 	DecryptTDF(data *TDFStorage) (string, error)
 	GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error)
 }
