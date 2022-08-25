@@ -20,14 +20,14 @@ docker-buildx-armsetup:
 .PHONY: dockerbuild
 dockerbuild: clean docker-buildx-armsetup
 	@echo "Building '$(IMAGETAG):$(IMAGEVERSION)' Docker image"
-	@DOCKER_BUILDKIT=1 docker buildx build --platform $(PLATFORMS) -t $(IMAGETAG):$(IMAGEVERSION) .
+	@DOCKER_BUILDKIT=1 docker buildx build --platform $(PLATFORMS) -t $(IMAGETAG):$(IMAGEVERSION) . -f Dockerfile.dev
 
 # This will build AND PUSH (in parallel) Docker images for every arch in PLATFORMS
 # using Docker's crossbuild environment: https://docs.docker.com/build/buildx/multiplatform-images/
 .PHONY: dockerbuildpush
 dockerbuildpush: clean docker-buildx-armsetup
 	@echo "Publishing '$(IMAGETAG):$(IMAGEVERSION)' to Dockerhub"
-	@DOCKER_BUILDKIT=1 docker buildx build --platform $(PLATFORMS) -t $(IMAGETAG):$(IMAGEVERSION) --push .
+	@DOCKER_BUILDKIT=1 docker buildx build --platform $(PLATFORMS) -t $(IMAGETAG):$(IMAGEVERSION) --push . -f Dockerfile.dev
 
 #List targets in makefile
 .PHONY: list
