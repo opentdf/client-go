@@ -14,13 +14,14 @@ WORKDIR /build
 RUN apt-get update && apt-get install -y cmake
 RUN pip install conan
 RUN mkdir conan-output
-RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing -g deploy -if ./conan-output
+# TODO remove the `--build=opentdf-client` flag - this is only required to work around
+# https://github.com/opentdf/client-cpp/issues/61
+RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing --build=opentdf-client -g deploy -if ./conan-output
 
 FROM golang:1.19-bullseye
 
 COPY --chown=0:0 --from=builder /build/conan-output/opentdf-client/lib /build/tdf-client/lib
 COPY --chown=0:0 --from=builder /build/conan-output/opentdf-client/include /build/tdf-client/include
-
 
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
