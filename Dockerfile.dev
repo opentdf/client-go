@@ -2,10 +2,10 @@
 # Git branch of `client-cpp`, rather than a published Conan release, which is handy for development.
 FROM python:3.9-bullseye AS builder
 # This can be a branchref OR a tagref
-ARG CLIENT_CPP_BRANCH=1.1.5
+ARG CLIENT_CPP_REF=1.1.5
 WORKDIR /build
 
-RUN git clone -b ${CLIENT_CPP_BRANCH} 'https://github.com/opentdf/client-cpp.git'
+RUN git clone -b ${CLIENT_CPP_REF} 'https://github.com/opentdf/client-cpp.git'
 
 WORKDIR client-cpp/src/
 
