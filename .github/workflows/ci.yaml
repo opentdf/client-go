@@ -32,7 +32,9 @@ jobs:
           build-args: |-
             CLIENT_CPP_VERSION=${{ env.CLIENT_CPP_VERSION }}
           context: ./
-          file: ./Dockerfile.example
+          # TODO when client-cpp has an official release that works,
+          # switch this back to `Dockerfile.example`
+          file: ./Dockerfile.dev
           platforms: ${{ env.CONTAINER_ARCHS }}
           push: false
           tags: ${{ steps.meta.outputs.tags }}
