@@ -1,0 +1,40 @@
+name: Quality Gate
+env:
+  CONTAINER_ARCHS: linux/amd64,linux/arm64
+  CLIENT_CPP_VERSION: 1.1.5
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+jobs:
+  ci_gate_build_example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/opentdf/client-go-example
+          tags: |
+            type=ref,event=branch
+            type=sha
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: build-validate
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |-
+            CLIENT_CPP_VERSION=${{ env.CLIENT_CPP_VERSION }}
+            CLIENT_CPP_REF=${{ env.CLIENT_CPP_VERSION }}
+          context: ./
+          file: ./Dockerfile.example
+          platforms: ${{ env.CONTAINER_ARCHS }}
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

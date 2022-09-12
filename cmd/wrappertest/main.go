@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	opentdf "github.com/opentdf/client-go"
+	"github.com/opentdf/client-go"
 
 	"go.uber.org/zap"
 )
@@ -18,6 +18,8 @@ func main() {
 		log.Fatalf("Logger initialization failed!")
 	}
 
+
+	//nolint:errcheck
 	defer logger.Sync()
 
 	//slammer(logger)
@@ -35,12 +37,12 @@ func sequentialOIDC(logger *zap.Logger) {
 	idpURL := os.Getenv("TDF_OIDC_URL")
 	externalToken := os.Getenv("TDF_EXTERNALTOKEN")
 
-	var tdfSDK opentdf.TDFClient
+	var tdfSDK client.TDFClient
 
 	if externalToken != "" {
-		tdfSDK = opentdf.NewTDFClientOIDCTokenExchange(user, orgName, clientId, clientSecret, externalToken, idpURL, kasURL, logger)
+		tdfSDK = client.NewTDFClientOIDCTokenExchange(user, orgName, clientId, clientSecret, externalToken, idpURL, kasURL, logger)
 	} else {
-		tdfSDK = opentdf.NewTDFClientOIDC(user, orgName, clientId, clientSecret, idpURL, kasURL, logger)
+		tdfSDK = client.NewTDFClientOIDC(user, orgName, clientId, clientSecret, idpURL, kasURL, logger)
 	}
 
 	for i := 1; i <= 1000; i++ {
@@ -50,7 +52,7 @@ func sequentialOIDC(logger *zap.Logger) {
 	tdfSDK.Close()
 }
 
-func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK opentdf.TDFClient) {
+func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK client.TDFClient) {
 	defer wg.Done()
 
 	msg, timeElapsed := track(fmt.Sprintf("encrypt #%d", iter))
@@ -61,14 +63,18 @@ func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK opentd
 		"https://example.com/attr/COI/value/PRF",
 	)
 
-	res, _ := tdfSDK.EncryptString("holla at ya boi", dataAttr)
+	stringStore, _ := client.NewTDFStorageString("holla at ya boi")
+	defer stringStore.Close()
+	res, _ := tdfSDK.EncryptToString(stringStore, "<some-metadata>", dataAttr)
 	logger.Sugar().Debugf("Got TDF encrypted payload %s", string(res))
 	duration(msg, timeElapsed)
 
 	time.Sleep(5 * time.Second)
 
 	msg, timeElapsed = track(fmt.Sprintf("decrypt #%d", iter))
-	decRes, _ := tdfSDK.DecryptTDF(res)
+	resStore, _ := client.NewTDFStorageString(string(res))
+	defer resStore.Close()
+	decRes, _ := tdfSDK.DecryptTDF(resStore)
 	duration(msg, timeElapsed)
 	fmt.Printf("Round trip decrypted: %s", decRes)
 }
