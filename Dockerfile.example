@@ -1,9 +1,11 @@
 # This dockerfile shows how to install the C++ OpenTDF library, and then perform a
 # `go build` on Go dependencies that need that C++ library.
 #
-# The `client-cpp` library binary and include files must be available to Go
-# during the `go build` step. As `client-cpp` doesn't have prebuilt binaries for every platform,
-# we build it ourselves here, as a precondition to the `go build` step.
+# The `client-cpp` library binary and include files MUST be available to Go
+# during any `go build` step.
+#
+# As `client-cpp` uses `conan` for install/build/deploy, we rely on that to build `client-cpp` for us for
+# targeted platforms, and install any necessary C++ deps that are required.
 
 FROM python:3.9-bullseye AS builder
 
@@ -14,9 +16,20 @@ WORKDIR /build
 RUN apt-get update && apt-get install -y cmake
 RUN pip install conan
 RUN mkdir conan-output
-# TODO remove the `--build=opentdf-client` flag - this is only required to work around
-# https://github.com/opentdf/client-cpp/issues/61
-RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing --build=opentdf-client -g deploy -if ./conan-output
+# Note that `libiconv` is no longer present on bullseye/ubuntu latest,
+# and so `conan` binaries built assuming `libiconv` is present will fail to link,
+# with undefined references to `libiconv`.
+#
+# Hence, the following workarounds/flags are required to disable libiconv in the build,
+# and produce a linkable shared library.
+#
+# See also convos in: https://github.com/conan-io/conan-center-index/pull/12697
+RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing -g deploy -if ./conan-output \
+    -o libxml2:iconv=False \
+    -o libxml2:icu=False \
+    -o boost:i18n_backend_iconv="off" \
+    -o boost:i18n_backend_icu=False \
+    -o boost:without_locale=True
 
 FROM golang:1.19-bullseye
 
@@ -41,6 +54,7 @@ RUN mkdir /dist
 RUN go build  -o /dist/wrappertest ./cmd/wrappertest
 
 # Build the library - Library consumers will build this library implicitly as part of
-# `go get -u github.com/opentdf/client-go` (assuming CGO_CFLAGS and CGO_LDFLAGS point at the C++ resources in that environment)
+# `go get -u github.com/opentdf/client-go` (assuming CGO_CFLAGS and CGO_LDFLAGS point
+# at the correct C++ headers/static lib in that environment, for that environment)
 # but doing it explicitly here as well for the sake of example
 RUN go build -o /dist/client-go
