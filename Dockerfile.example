@@ -14,7 +14,7 @@ ARG CLIENT_CPP_VERSION=1.1.5
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y cmake
-RUN pip install conan
+RUN pip install conan~=1.52
 RUN mkdir conan-output
 # Note that `libiconv` is no longer present on bullseye/ubuntu latest,
 # and so `conan` binaries built assuming `libiconv` is present will fail to link,
