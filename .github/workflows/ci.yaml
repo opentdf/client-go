@@ -33,9 +33,7 @@ jobs:
             CLIENT_CPP_VERSION=${{ env.CLIENT_CPP_VERSION }}
             CLIENT_CPP_REF=${{ env.CLIENT_CPP_VERSION }}
           context: ./
-          # TODO when client-cpp has an official release that works,
-          # switch this back to `Dockerfile.example`
-          file: ./Dockerfile.dev
+          file: ./Dockerfile.example
           platforms: ${{ env.CONTAINER_ARCHS }}
           push: false
           tags: ${{ steps.meta.outputs.tags }}
