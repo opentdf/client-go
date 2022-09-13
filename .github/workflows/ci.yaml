@@ -35,6 +35,8 @@ jobs:
           context: ./
           file: ./Dockerfile.example
           platforms: ${{ env.CONTAINER_ARCHS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
