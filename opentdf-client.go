@@ -166,7 +166,7 @@ func NewTDFClientOIDC(email string, orgName string, clientId string, clientSecre
 
 	//If Zap logging level == debug, then make TDF SDK internal request logging very verbose
 	if zapDebug := logger.Check(zap.DebugLevel, "debugging"); zapDebug != nil {
-		cSDK.checkTDFStatus(C.TDFEnableConsoleLogging(cSDK.sdkPtr, C.TDFLogLevelDebug), "TDFEnableConsoleLogging")
+		cSDK.checkTDFStatus(C.TDFEnableConsoleLogging(cSDK.sdkPtr, C.TDFLogLevelTrace), "TDFEnableConsoleLogging")
 	}
 	return &cSDK
 }
@@ -178,7 +178,7 @@ func NewTDFClientOIDCTokenExchange(email, orgName, clientId, clientSecret, exter
 
 	//If Zap logging level == debug, then make TDF SDK internal request logging very verbose
 	if zapDebug := logger.Check(zap.DebugLevel, "debugging"); zapDebug != nil {
-		cSDK.checkTDFStatus(C.TDFEnableConsoleLogging(cSDK.sdkPtr, C.TDFLogLevelDebug), "TDFEnableConsoleLogging")
+		cSDK.checkTDFStatus(C.TDFEnableConsoleLogging(cSDK.sdkPtr, C.TDFLogLevelTrace), "TDFEnableConsoleLogging")
 	}
 	return &cSDK
 }
