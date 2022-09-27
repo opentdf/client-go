@@ -90,15 +90,15 @@ type TDFStorage struct {
 
 type TDFClient interface {
 	Close()
-	EncryptToFile(data *TDFStorage, outFile, metadata string, dataAttribs []string) error
-	EncryptToString(data *TDFStorage, metadata string, dataAttribs []string) ([]byte, error)
-	GetEncryptedMetadata(data *TDFStorage) (string, error)
-	DecryptTDF(data *TDFStorage) (string, error)
-	GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error)
+	EncryptToFile(data TDFStorage, outFile, metadata string, dataAttribs []string) error
+	EncryptToString(data TDFStorage, metadata string, dataAttribs []string) ([]byte, error)
+	GetEncryptedMetadata(data TDFStorage) (string, error)
+	DecryptTDF(data TDFStorage) (string, error)
+	GetPolicyFromTDF(data TDFStorage) (*TDFPolicy, error)
 }
 
 //Creates a new S3-based TDF storage object
-func NewTDFStorageS3(s3url, awsAccessKeyID, awsSecretKey, awsRegion string) (*TDFStorage, error) {
+func NewTDFStorageS3(s3url, awsAccessKeyID, awsSecretKey, awsRegion string) (TDFStorage, error) {
 	inS3Url := C.CString(s3url)
 	inKeyId := C.CString(awsAccessKeyID)
 	inSecretKey := C.CString(awsSecretKey)
@@ -119,7 +119,7 @@ func NewTDFStorageS3(s3url, awsAccessKeyID, awsSecretKey, awsRegion string) (*TD
 }
 
 //Creates a new file-based TDF storage object
-func NewTDFStorageFile(filepath string) (*TDFStorage, error) {
+func NewTDFStorageFile(filepath string) (TDFStorage, error) {
 
 	inFile := C.CString(filepath)
 	thingsToFree := []func(){func() { C.free(unsafe.Pointer(inFile)) }}
@@ -133,7 +133,7 @@ func NewTDFStorageFile(filepath string) (*TDFStorage, error) {
 }
 
 //Creates a new string-based TDF storage object
-func NewTDFStorageString(data string) (*TDFStorage, error) {
+func NewTDFStorageString(data string) (TDFStorage, error) {
 	inData := []byte(data)
 	inSize, inPtr := convertGoBufToCBuf(inData)
 
@@ -149,7 +149,7 @@ func NewTDFStorageString(data string) (*TDFStorage, error) {
 // Note that callers MUST invoke Close() on the TDFStorage object
 // when they're done with it, ideally via a `defer storage.Close()`
 // If this does not happen, memory manually allocated in the C memspace will not be freed
-func (storage *TDFStorage) Close() {
+func (storage TDFStorage) Close() {
 	C.TDFDestroyStorage(storage.storagePtr)
 	//Free up resources (cstrings, etc) created as part of this storage object
 	defer func() {
@@ -198,20 +198,20 @@ func (tdfsdk *tdfCInterop) Close() {
 
 //EncryptToString takes a TDFStorage object containing the plaintext data to encrypt, an (optional, can be empty) string of metadata,
 //and a policy object, and encrypts the string + metadata with the policy, returning the encrypted string.
-func (tdfsdk *tdfCInterop) EncryptToString(data *TDFStorage, metadata string, dataAttribs []string) ([]byte, error) {
+func (tdfsdk *tdfCInterop) EncryptToString(data TDFStorage, metadata string, dataAttribs []string) ([]byte, error) {
 	return tdfsdk.encryptToString(data, tdfsdk.kasURL, metadata, dataAttribs)
 }
 
 //DecryptTDF takes a a TDFStorage object containing encrypted TDF data, and decrypts the contents, returning the decrypted string.
-func (tdfsdk *tdfCInterop) DecryptTDF(data *TDFStorage) (string, error) {
+func (tdfsdk *tdfCInterop) DecryptTDF(data TDFStorage) (string, error) {
 	return tdfsdk.decryptBytes(data)
 }
 
-func (tdfsdk *tdfCInterop) GetEncryptedMetadata(data *TDFStorage) (string, error) {
+func (tdfsdk *tdfCInterop) GetEncryptedMetadata(data TDFStorage) (string, error) {
 	return tdfsdk.getEncryptedMetadataFromTDF(data)
 }
 
-func (tdfsdk *tdfCInterop) GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error) {
+func (tdfsdk *tdfCInterop) GetPolicyFromTDF(data TDFStorage) (*TDFPolicy, error) {
 	var tdfPolicy TDFPolicy
 	policyJSON, err := tdfsdk.getPolicyStringFromTDF(data)
 	if err != nil {
@@ -230,7 +230,7 @@ func (tdfsdk *tdfCInterop) GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error
 //EncryptToFile takes a TDFStorage object containing the plaintext data to encrypt, an (optional, can be empty) string of metadata, an output filename,
 //and a policy object, and encrypts the string + metadata with the policy, writing the result to the provided
 //output filename.
-func (tdfsdk *tdfCInterop) EncryptToFile(data *TDFStorage, outFile, metadata string, dataAttribs []string) error {
+func (tdfsdk *tdfCInterop) EncryptToFile(data TDFStorage, outFile, metadata string, dataAttribs []string) error {
 	return tdfsdk.encryptToFile(data, outFile, tdfsdk.kasURL, metadata, dataAttribs)
 }
 
@@ -296,7 +296,7 @@ func (tdfsdk *tdfCInterop) initializeOIDCClientTokenExchange(
 	tdfsdk.logger.Debug("TDF C SDK initialized")
 }
 
-func (tdfsdk *tdfCInterop) encryptToFile(data *TDFStorage, outFilename, kasURL, metadata string, dataAttribs []string) error {
+func (tdfsdk *tdfCInterop) encryptToFile(data TDFStorage, outFilename, kasURL, metadata string, dataAttribs []string) error {
 	outFile := C.CString(outFilename)
 	defer C.free(unsafe.Pointer(outFile))
 
@@ -328,7 +328,7 @@ func (tdfsdk *tdfCInterop) encryptToFile(data *TDFStorage, outFilename, kasURL, 
 	return nil
 }
 
-func (tdfsdk *tdfCInterop) encryptToString(data *TDFStorage, kasURL, metadata string, dataAttribs []string) ([]byte, error) {
+func (tdfsdk *tdfCInterop) encryptToString(data TDFStorage, kasURL, metadata string, dataAttribs []string) ([]byte, error) {
 	thingsToFree := tdfsdk.addDataAttributes(dataAttribs, kasURL)
 	//Free up resources created in above func after encrypt happens
 	defer func() {
@@ -379,7 +379,7 @@ func (tdfsdk *tdfCInterop) addDataAttributes(dataAttrs []string, kasURL string) 
 	return thingsToFree
 }
 
-func (tdfsdk *tdfCInterop) decryptBytes(data *TDFStorage) (string, error) {
+func (tdfsdk *tdfCInterop) decryptBytes(data TDFStorage) (string, error) {
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
 	err := tdfsdk.checkTDFStatus(C.TDFDecryptString(tdfsdk.sdkPtr, data.storagePtr, &outPtr, &outSize),
@@ -399,7 +399,7 @@ func (tdfsdk *tdfCInterop) decryptBytes(data *TDFStorage) (string, error) {
 	return decStr, nil
 }
 
-func (tdfsdk *tdfCInterop) getEncryptedMetadataFromTDF(data *TDFStorage) (string, error) {
+func (tdfsdk *tdfCInterop) getEncryptedMetadataFromTDF(data TDFStorage) (string, error) {
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
 
@@ -420,7 +420,7 @@ func (tdfsdk *tdfCInterop) getEncryptedMetadataFromTDF(data *TDFStorage) (string
 	return decStr, nil
 }
 
-func (tdfsdk *tdfCInterop) getPolicyStringFromTDF(data *TDFStorage) (string, error) {
+func (tdfsdk *tdfCInterop) getPolicyStringFromTDF(data TDFStorage) (string, error) {
 
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
