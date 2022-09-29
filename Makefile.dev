@@ -1,4 +1,4 @@
-IMAGEVERSION?=1.1.5
+IMAGEVERSION?=1.2.0
 IMAGETAG?=ghcr.io/opentdf/client-go
 PLATFORMS?=linux/arm64,linux/amd64
 

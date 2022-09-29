@@ -9,7 +9,7 @@
 
 FROM python:3.9-bullseye AS builder
 
-ARG CLIENT_CPP_VERSION=1.1.5
+ARG CLIENT_CPP_VERSION=1.2.0
 
 WORKDIR /build
 
