@@ -18,7 +18,6 @@ func main() {
 		log.Fatalf("Logger initialization failed!")
 	}
 
-
 	//nolint:errcheck
 	defer logger.Sync()
 
@@ -75,6 +74,33 @@ func doRoundtrip(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK client
 	resStore, _ := client.NewTDFStorageString(string(res))
 	defer resStore.Close()
 	decRes, _ := tdfSDK.DecryptTDF(resStore)
+	duration(msg, timeElapsed)
+	fmt.Printf("Round trip decrypted: %s", decRes)
+}
+
+func doRoundtripPartial(logger *zap.Logger, iter int, wg *sync.WaitGroup, tdfSDK client.TDFClient) {
+	defer wg.Done()
+
+	msg, timeElapsed := track(fmt.Sprintf("encrypt #%d", iter))
+
+	var dataAttr []string
+	dataAttr = append(dataAttr,
+		"https://example.com/attr/Classification/value/C",
+		"https://example.com/attr/COI/value/PRF",
+	)
+
+	stringStore, _ := client.NewTDFStorageString("holla at ya boi")
+	defer stringStore.Close()
+	res, _ := tdfSDK.EncryptToString(stringStore, "<some-metadata>", dataAttr)
+	logger.Sugar().Debugf("Got TDF encrypted payload %s", string(res))
+	duration(msg, timeElapsed)
+
+	time.Sleep(5 * time.Second)
+
+	msg, timeElapsed = track(fmt.Sprintf("decrypt #%d", iter))
+	resStore, _ := client.NewTDFStorageString(string(res))
+	defer resStore.Close()
+	decRes, _ := tdfSDK.DecryptTDFPartial(resStore, 0, 1)
 	duration(msg, timeElapsed)
 	fmt.Printf("Round trip decrypted: %s", decRes)
 }

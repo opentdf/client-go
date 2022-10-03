@@ -94,6 +94,7 @@ type TDFClient interface {
 	EncryptToString(data *TDFStorage, metadata string, dataAttribs []string) ([]byte, error)
 	GetEncryptedMetadata(data *TDFStorage) (string, error)
 	DecryptTDF(data *TDFStorage) (string, error)
+	DecryptTDFPartial(data *TDFStorage, offset, length int64) (string, error)
 	GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error)
 }
 
@@ -205,6 +206,11 @@ func (tdfsdk *tdfCInterop) EncryptToString(data *TDFStorage, metadata string, da
 //DecryptTDF takes a a TDFStorage object containing encrypted TDF data, and decrypts the contents, returning the decrypted string.
 func (tdfsdk *tdfCInterop) DecryptTDF(data *TDFStorage) (string, error) {
 	return tdfsdk.decryptBytes(data)
+}
+
+//DecryptTDFPartial takes a a TDFStorage object containing encrypted TDF data, and decrypts the from the given (plaintext) byte range, returning the decrypted plaintext for that range.
+func (tdfsdk *tdfCInterop) DecryptTDFPartial(data *TDFStorage, offset, length int64) (string, error) {
+	return tdfsdk.decryptPartialBytes(data, offset, length)
 }
 
 func (tdfsdk *tdfCInterop) GetEncryptedMetadata(data *TDFStorage) (string, error) {
@@ -386,6 +392,32 @@ func (tdfsdk *tdfCInterop) decryptBytes(data *TDFStorage) (string, error) {
 		"TDFDecryptString")
 	if err != nil {
 		tdfsdk.logger.Errorf("Error decrypting bytes!, error was %s", err)
+		return "", err
+	}
+
+	outLen := C.int(C.uint(outSize))
+	strBuf := C.GoBytes(unsafe.Pointer(outPtr), outLen)
+	//GoBytes copies data from C memspace to Go memspace, so we're free to free the
+	//C memspace here
+	C.free(unsafe.Pointer(outPtr))
+	decStr := string(strBuf)
+	tdfsdk.logger.Debugf("Got buffer %s with length %d", decStr, C.int(outLen))
+	return decStr, nil
+}
+
+func (tdfsdk *tdfCInterop) decryptPartialBytes(data *TDFStorage, offset, length int64) (string, error) {
+	var outPtr C.TDFBytesPtr
+	var outSize C.TDFBytesLength
+	var offsetC C.TDFBytesLength
+	var lengthC C.TDFBytesLength
+
+	offsetC = C.uint(offset)
+	lengthC = C.uint(length)
+
+	err := tdfsdk.checkTDFStatus(C.TDFDecryptDataPartial(tdfsdk.sdkPtr, data.storagePtr, offsetC, lengthC, &outPtr, &outSize),
+		"TDFDecryptDataPartial")
+	if err != nil {
+		tdfsdk.logger.Errorf("Error decrypting partial bytes!, error was %s", err)
 		return "", err
 	}
 
