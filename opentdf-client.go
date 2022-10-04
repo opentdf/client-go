@@ -40,11 +40,11 @@ import (
 // }
 import "C"
 
-//NOTE: Everyone looking at or evaluating this code should first read
-//https://dave.cheney.net/2016/01/18/cgo-is-not-go, which is full of extremely
-//excellent criticism/gotchas around the use of `cgo`, from one of Go's lead language architects.
-//Dave Cheney is 100% right about how the use of CGO makes C your lowest common denomiator and neuters most of
-//Go's natural, modern benenfits. And yet, this exists as a stopgap.
+// NOTE: Everyone looking at or evaluating this code should first read
+// https://dave.cheney.net/2016/01/18/cgo-is-not-go, which is full of extremely
+// excellent criticism/gotchas around the use of `cgo`, from one of Go's lead language architects.
+// Dave Cheney is 100% right about how the use of CGO makes C your lowest common denomiator and neuters most of
+// Go's natural, modern benenfits. And yet, this exists as a stopgap.
 type tdfCInterop struct {
 	sdkPtr                C.TDFClientPtr
 	credsPtr              C.TDFCredsPtr
@@ -53,7 +53,7 @@ type tdfCInterop struct {
 	logger                *zap.SugaredLogger
 }
 
-//See https://github.com/opentdf/spec/blob/master/schema/AttributeObject.md
+// See https://github.com/opentdf/spec/blob/master/schema/AttributeObject.md
 // {
 // "attribute": "https://example.com/attr/classification/value/topsecret"
 // }
@@ -63,13 +63,15 @@ type TDFAttribute struct {
 
 // See https://github.com/opentdf/spec/blob/master/schema/PolicyObject.md
 // {
-//"uuid": "1111-2222-33333-44444-abddef-timestamp",
-//"body": {
-//    "dataAttributes": [<Attribute Object>],
-//    "dissem": ["user-id@domain.com"]
-//  },
-//"tdf_spec_version:": "x.y.z"
-//}
+// "uuid": "1111-2222-33333-44444-abddef-timestamp",
+//
+//	"body": {
+//	   "dataAttributes": [<Attribute Object>],
+//	   "dissem": ["user-id@domain.com"]
+//	 },
+//
+// "tdf_spec_version:": "x.y.z"
+// }
 type TDFPolicy struct {
 	UUID        string        `json:"uuid"`
 	Body        TDFPolicyBody `json:"body"`
@@ -81,8 +83,8 @@ type TDFPolicyBody struct {
 	DisseminationList []string       `json:"dissem"`
 }
 
-//Note that right now the client-cpp storage type only works for TDF INPUT data, not OUTPUT data.
-//This will be added eventually
+// Note that right now the client-cpp storage type only works for TDF INPUT data, not OUTPUT data.
+// This will be added eventually
 type TDFStorage struct {
 	storagePtr   C.TDFStorageTypePtr
 	thingsToFree []func()
@@ -94,11 +96,11 @@ type TDFClient interface {
 	EncryptToString(data *TDFStorage, metadata string, dataAttribs []string) ([]byte, error)
 	GetEncryptedMetadata(data *TDFStorage) (string, error)
 	DecryptTDF(data *TDFStorage) (string, error)
-	DecryptTDFPartial(data *TDFStorage, offset, length int64) (string, error)
+	DecryptTDFPartial(data *TDFStorage, offset, length uint32) (string, error)
 	GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error)
 }
 
-//Creates a new S3-based TDF storage object
+// Creates a new S3-based TDF storage object
 func NewTDFStorageS3(s3url, awsAccessKeyID, awsSecretKey, awsRegion string) (*TDFStorage, error) {
 	inS3Url := C.CString(s3url)
 	inKeyId := C.CString(awsAccessKeyID)
@@ -119,7 +121,7 @@ func NewTDFStorageS3(s3url, awsAccessKeyID, awsSecretKey, awsRegion string) (*TD
 	return &storage, nil
 }
 
-//Creates a new file-based TDF storage object
+// Creates a new file-based TDF storage object
 func NewTDFStorageFile(filepath string) (*TDFStorage, error) {
 
 	inFile := C.CString(filepath)
@@ -133,7 +135,7 @@ func NewTDFStorageFile(filepath string) (*TDFStorage, error) {
 	return &storage, nil
 }
 
-//Creates a new string-based TDF storage object
+// Creates a new string-based TDF storage object
 func NewTDFStorageString(data string) (*TDFStorage, error) {
 	inData := []byte(data)
 	inSize, inPtr := convertGoBufToCBuf(inData)
@@ -146,7 +148,7 @@ func NewTDFStorageString(data string) (*TDFStorage, error) {
 	return &storage, nil
 }
 
-//Should be invoked by caller when it's done with the storage location.
+// Should be invoked by caller when it's done with the storage location.
 // Note that callers MUST invoke Close() on the TDFStorage object
 // when they're done with it, ideally via a `defer storage.Close()`
 // If this does not happen, memory manually allocated in the C memspace will not be freed
@@ -160,7 +162,7 @@ func (storage *TDFStorage) Close() {
 	}()
 }
 
-//Creates a new TDF client that will use OIDC client secret credentials to authenticate.
+// Creates a new TDF client that will use OIDC client secret credentials to authenticate.
 func NewTDFClientOIDC(email string, orgName string, clientId string, clientSecret string, oidcURL string, kasURL string, logger *zap.Logger) TDFClient {
 	cSDK := tdfCInterop{logger: logger.Sugar(), kasURL: kasURL}
 	cSDK.initializeOIDCClient(C.CString(email), C.CString(orgName), C.CString(clientId), C.CString(clientSecret), C.CString(oidcURL), C.CString(kasURL))
@@ -172,7 +174,7 @@ func NewTDFClientOIDC(email string, orgName string, clientId string, clientSecre
 	return &cSDK
 }
 
-//Creates a new TDF client that will use OIDC token exchange credentials to authenticate.
+// Creates a new TDF client that will use OIDC token exchange credentials to authenticate.
 func NewTDFClientOIDCTokenExchange(email, orgName, clientId, clientSecret, externalAccessToken, oidcURL, kasURL string, logger *zap.Logger) TDFClient {
 	cSDK := tdfCInterop{logger: logger.Sugar(), kasURL: kasURL}
 	cSDK.initializeOIDCClientTokenExchange(C.CString(email), C.CString(orgName), C.CString(clientId), C.CString(clientSecret), C.CString(externalAccessToken), C.CString(oidcURL), C.CString(kasURL))
@@ -197,19 +199,19 @@ func (tdfsdk *tdfCInterop) Close() {
 	}
 }
 
-//EncryptToString takes a TDFStorage object containing the plaintext data to encrypt, an (optional, can be empty) string of metadata,
-//and a policy object, and encrypts the string + metadata with the policy, returning the encrypted string.
+// EncryptToString takes a TDFStorage object containing the plaintext data to encrypt, an (optional, can be empty) string of metadata,
+// and a policy object, and encrypts the string + metadata with the policy, returning the encrypted string.
 func (tdfsdk *tdfCInterop) EncryptToString(data *TDFStorage, metadata string, dataAttribs []string) ([]byte, error) {
 	return tdfsdk.encryptToString(data, tdfsdk.kasURL, metadata, dataAttribs)
 }
 
-//DecryptTDF takes a a TDFStorage object containing encrypted TDF data, and decrypts the contents, returning the decrypted string.
+// DecryptTDF takes a a TDFStorage object containing encrypted TDF data, and decrypts the contents, returning the decrypted string.
 func (tdfsdk *tdfCInterop) DecryptTDF(data *TDFStorage) (string, error) {
 	return tdfsdk.decryptBytes(data)
 }
 
-//DecryptTDFPartial takes a a TDFStorage object containing encrypted TDF data, and decrypts the from the given (plaintext) byte range, returning the decrypted plaintext for that range.
-func (tdfsdk *tdfCInterop) DecryptTDFPartial(data *TDFStorage, offset, length int64) (string, error) {
+// DecryptTDFPartial takes a a TDFStorage object containing encrypted TDF data, and decrypts the from the given (plaintext) byte range, returning the decrypted plaintext for that range.
+func (tdfsdk *tdfCInterop) DecryptTDFPartial(data *TDFStorage, offset, length uint32) (string, error) {
 	return tdfsdk.decryptPartialBytes(data, offset, length)
 }
 
@@ -233,9 +235,9 @@ func (tdfsdk *tdfCInterop) GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error
 	return &tdfPolicy, nil
 }
 
-//EncryptToFile takes a TDFStorage object containing the plaintext data to encrypt, an (optional, can be empty) string of metadata, an output filename,
-//and a policy object, and encrypts the string + metadata with the policy, writing the result to the provided
-//output filename.
+// EncryptToFile takes a TDFStorage object containing the plaintext data to encrypt, an (optional, can be empty) string of metadata, an output filename,
+// and a policy object, and encrypts the string + metadata with the policy, writing the result to the provided
+// output filename.
 func (tdfsdk *tdfCInterop) EncryptToFile(data *TDFStorage, outFile, metadata string, dataAttribs []string) error {
 	return tdfsdk.encryptToFile(data, outFile, tdfsdk.kasURL, metadata, dataAttribs)
 }
@@ -405,7 +407,7 @@ func (tdfsdk *tdfCInterop) decryptBytes(data *TDFStorage) (string, error) {
 	return decStr, nil
 }
 
-func (tdfsdk *tdfCInterop) decryptPartialBytes(data *TDFStorage, offset, length int64) (string, error) {
+func (tdfsdk *tdfCInterop) decryptPartialBytes(data *TDFStorage, offset, length uint32) (string, error) {
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
 	var offsetC C.TDFBytesLength
