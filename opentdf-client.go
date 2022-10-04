@@ -211,7 +211,7 @@ func (tdfsdk *tdfCInterop) DecryptTDF(data *TDFStorage) (string, error) {
 }
 
 // DecryptTDFPartial takes a a TDFStorage object containing encrypted TDF data, and decrypts the from the given (plaintext) byte range, returning the decrypted plaintext for that range.
-func (tdfsdk *tdfCInterop) DecryptTDFPartial(data *TDFStorage, offset, length int64) (string, error) {
+func (tdfsdk *tdfCInterop) DecryptTDFPartial(data *TDFStorage, offset, length uint32) (string, error) {
 	return tdfsdk.decryptPartialBytes(data, offset, length)
 }
 
@@ -407,7 +407,7 @@ func (tdfsdk *tdfCInterop) decryptBytes(data *TDFStorage) (string, error) {
 	return decStr, nil
 }
 
-func (tdfsdk *tdfCInterop) decryptPartialBytes(data *TDFStorage, offset, length int64) (string, error) {
+func (tdfsdk *tdfCInterop) decryptPartialBytes(data *TDFStorage, offset, length uint32) (string, error) {
 	var outPtr C.TDFBytesPtr
 	var outSize C.TDFBytesLength
 	var offsetC C.TDFBytesLength
