@@ -516,6 +516,8 @@ func (tdfsdk *tdfCInterop) checkTDFStatus(status C.TDF_STATUS, cFuncName string)
 		return nil
 	} else if status == C.TDF_STATUS_INVALID_PARAMS {
 		return fmt.Errorf("Bad param calling %s", cFuncName)
+	} else if status == C.TDF_STATUS_FAILURE_NETWORK {
+		return fmt.Errorf("Network error calling %s", cFuncName)
 	} else {
 		return fmt.Errorf("Something went horribly wrong calling: %s, got code %d", cFuncName, status)
 	}
