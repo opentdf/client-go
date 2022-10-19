@@ -98,6 +98,7 @@ type TDFClient interface {
 	DecryptTDF(data *TDFStorage) (string, error)
 	DecryptTDFPartial(data *TDFStorage, offset, length uint32) (string, error)
 	GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error)
+	GetStorageTypeDescriptor(data *TDFStorage) (string, error)
 }
 
 // Creates a new S3-based TDF storage object
@@ -240,6 +241,10 @@ func (tdfsdk *tdfCInterop) GetPolicyFromTDF(data *TDFStorage) (*TDFPolicy, error
 // output filename.
 func (tdfsdk *tdfCInterop) EncryptToFile(data *TDFStorage, outFile, metadata string, dataAttribs []string) error {
 	return tdfsdk.encryptToFile(data, outFile, tdfsdk.kasURL, metadata, dataAttribs)
+}
+
+func (tdfsdk *tdfCInterop) GetStorageTypeDescriptor(data *TDFStorage) (string, error) {
+	return tdfsdk.getStorageTypeDescriptor(data)
 }
 
 func (tdfsdk *tdfCInterop) initializeOIDCClient(
@@ -476,6 +481,28 @@ func (tdfsdk *tdfCInterop) getPolicyStringFromTDF(data *TDFStorage) (string, err
 	return decStr, nil
 }
 
+func (tdfsdk *tdfCInterop) getStorageTypeDescriptor(data *TDFStorage) (string, error) {
+
+	var outPtr C.TDFBytesPtr
+	var outSize C.TDFBytesLength
+
+	err := tdfsdk.checkTDFStatus(C.TDFGetTDFStorageDescriptor(data.storagePtr, &outPtr, &outSize),
+		"TDFGetTDFStorageDescriptor")
+	if err != nil {
+		tdfsdk.logger.Errorf("Error getting storage descriptor string! Error was %s", err)
+		return "", err
+	}
+
+	outLen := C.int(C.uint(outSize))
+	strBuf := C.GoBytes(unsafe.Pointer(outPtr), outLen)
+	//GoBytes copies data from C memspace to Go memspace, so we're free to free the
+	//C memspace here
+	C.free(unsafe.Pointer(outPtr))
+	decStr := string(strBuf)
+	tdfsdk.logger.Debugf("Got storage descriptor string buffer %s with length %d", decStr, C.int(outLen))
+	return decStr, nil
+}
+
 func convertGoBufToCBuf(buf []byte) (size C.uint, ptr *C.uchar) {
 	var bufptr *byte
 	if cap(buf) > 0 {
@@ -489,6 +516,8 @@ func (tdfsdk *tdfCInterop) checkTDFStatus(status C.TDF_STATUS, cFuncName string)
 		return nil
 	} else if status == C.TDF_STATUS_INVALID_PARAMS {
 		return fmt.Errorf("Bad param calling %s", cFuncName)
+	} else if status == C.TDF_STATUS_FAILURE_NETWORK {
+		return fmt.Errorf("Network error calling %s", cFuncName)
 	} else {
 		return fmt.Errorf("Something went horribly wrong calling: %s, got code %d", cFuncName, status)
 	}
