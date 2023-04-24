@@ -1,3 +1,6 @@
+[![Quality Gate](https://github.com/opentdf/client-go/actions/workflows/ci.yaml/badge.svg)](https://github.com/opentdf/client-go/actions/workflows/ci.yaml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/opentdf/client-go.svg)](https://pkg.go.dev/github.com/opentdf/client-go)
+
 # OpenTDF Golang Client
 
 This is a light Go wrapper around the OpenTDF C++ client SDK (https://github.com/opentdf/client-cpp), via that library's C interop.
