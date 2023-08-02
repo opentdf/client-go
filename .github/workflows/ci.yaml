@@ -44,5 +44,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           VCONAN_VER: ${{ env.VCONAN_VER }}
           VCLIENT_CPP_VER: ${{ env.VCLIENT_CPP_VER }}
-          VCONAN_BRANCH_VERSION: ${{ VCONAN_BRANCH_VERSION }}
-          VCONAN_RECIPE_VER: ${{ VCONAN_RECIPE_VER }}
+          VCONAN_BRANCH_VERSION: ${{ env.VCONAN_BRANCH_VERSION }}
+          VCONAN_RECIPE_VER: ${{ env.VCONAN_RECIPE_VER }}
