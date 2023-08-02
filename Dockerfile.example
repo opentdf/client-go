@@ -9,27 +9,39 @@
 
 FROM python:3.9-bullseye AS builder
 
-ARG CLIENT_CPP_VERSION=1.5.0
+#ARG CLIENT_CPP_VERSION=1.5.0
+#
+#WORKDIR /build
+#
+#RUN apt-get update && apt-get install -y cmake
+#RUN pip install conan==1.59
+#RUN mkdir conan-output
+## Note that `libiconv` is no longer present on bullseye/ubuntu latest,
+## and so `conan` binaries built assuming `libiconv` is present will fail to link,
+## with undefined references to `libiconv`.
+##
+## Hence, the following workarounds/flags are required to disable libiconv in the build,
+## and produce a linkable shared library.
+##
+## See also convos in: https://github.com/conan-io/conan-center-index/pull/12697
+#RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing -g deploy -if ./conan-output \
+#    -o libxml2:iconv=False \
+#    -o libxml2:icu=False \
+#    -o boost:i18n_backend_iconv="off" \
+#    -o boost:i18n_backend_icu=False \
+#    -o boost:without_locale=True
+#
 
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y cmake
-RUN pip install conan==1.59
-RUN mkdir conan-output
-# Note that `libiconv` is no longer present on bullseye/ubuntu latest,
-# and so `conan` binaries built assuming `libiconv` is present will fail to link,
-# with undefined references to `libiconv`.
-#
-# Hence, the following workarounds/flags are required to disable libiconv in the build,
-# and produce a linkable shared library.
-#
-# See also convos in: https://github.com/conan-io/conan-center-index/pull/12697
-RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing -g deploy -if ./conan-output \
-    -o libxml2:iconv=False \
-    -o libxml2:icu=False \
-    -o boost:i18n_backend_iconv="off" \
-    -o boost:i18n_backend_icu=False \
-    -o boost:without_locale=True
+RUN pip install conan==${VCONAN_VER}
+
+RUN git clone -b ${VCONAN_RECIPE_VER} 'https://github.com/opentdf/client-conan.git'
+
+WORKDIR client-conan
+
+RUN conan create recipe/all opentdf-client/${VCLIENT_CPP_VER}@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=${VCONAN_BRANCH_VERSION}
 
 FROM golang:1.19-bullseye
 
