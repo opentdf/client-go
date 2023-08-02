@@ -12,7 +12,7 @@ FROM python:3.9-bullseye AS builder
 # this seems wildly stupid, as there seems to be no way to pass values in without also specifying them here
 ARG VCONAN_VER=1.59.0
 ARG VCONAN_BRANCH_VERSION="True"
-ARG VCONAN_RECIPE_VER"main"
+ARG VCONAN_RECIPE_VER="main"
 ARG VCONAN_CPP_VER=1.5.0
 
 #ARG CLIENT_CPP_VERSION=1.5.0
