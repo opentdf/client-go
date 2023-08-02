@@ -1,7 +1,7 @@
 name: Quality Gate
 env:
   CONTAINER_ARCHS: linux/amd64,linux/arm64
-  VCONAN_RECIPE_VER: main
+  VCONAN_VER: 1.59.0
   # Would be nice if this value was set automagically when client-cpp is released and consumed everywhere
   VCLIENT_CPP_VER: 1.5.0
   VCONAN_BRANCH_VERSION: "True"
