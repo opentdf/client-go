@@ -47,7 +47,8 @@ RUN git clone -b ${VCONAN_RECIPE_VER} 'https://github.com/opentdf/client-conan.g
 
 WORKDIR client-conan
 
-RUN conan create recipe/all opentdf-client/${VCLIENT_CPP_VER}@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=${VCONAN_BRANCH_VERSION}
+#RUN conan create recipe/all opentdf-client/${VCLIENT_CPP_VER}@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=${VCONAN_BRANCH_VERSION}
+RUN conan create recipe/all opentdf-client/1.5.0@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=True
 
 FROM golang:1.19-bullseye
 
