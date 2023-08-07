@@ -9,34 +9,11 @@
 
 FROM python:3.9-bullseye AS builder
 
-# this seems wildly stupid, as there seems to be no way to pass values in without also specifying them here
-ARG VCONAN_VER=1.59.0
-ARG VCONAN_BRANCH_VERSION="True"
-ARG VCONAN_RECIPE_VER="main"
-ARG VCONAN_CPP_VER=1.5.0
-
-#ARG CLIENT_CPP_VERSION=1.5.0
-#
-#WORKDIR /build
-#
-#RUN apt-get update && apt-get install -y cmake
-#RUN pip install conan==1.59
-#RUN mkdir conan-output
-## Note that `libiconv` is no longer present on bullseye/ubuntu latest,
-## and so `conan` binaries built assuming `libiconv` is present will fail to link,
-## with undefined references to `libiconv`.
-##
-## Hence, the following workarounds/flags are required to disable libiconv in the build,
-## and produce a linkable shared library.
-##
-## See also convos in: https://github.com/conan-io/conan-center-index/pull/12697
-#RUN conan install opentdf-client/${CLIENT_CPP_VERSION}@ --build=missing -g deploy -if ./conan-output \
-#    -o libxml2:iconv=False \
-#    -o libxml2:icu=False \
-#    -o boost:i18n_backend_iconv="off" \
-#    -o boost:i18n_backend_icu=False \
-#    -o boost:without_locale=True
-#
+# Get the argument values
+ARG VCONAN_VER
+ARG VCONAN_BRANCH_VERSION
+ARG VCONAN_RECIPE_VER
+ARG VCLIENT_CPP_VER
 
 WORKDIR /build
 
@@ -47,16 +24,12 @@ RUN git clone -b ${VCONAN_RECIPE_VER} 'https://github.com/opentdf/client-conan.g
 
 WORKDIR client-conan
 
-#RUN conan create recipe/all opentdf-client/${VCLIENT_CPP_VER}@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=${VCONAN_BRANCH_VERSION}
-RUN conan create recipe/all opentdf-client/1.5.0@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=True
+RUN conan create recipe/all opentdf-client/${VCLIENT_CPP_VER}@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=${VCONAN_BRANCH_VERSION}
 
 FROM golang:1.19-bullseye
 
-
 WORKDIR /build
 
-#COPY --chown=0:0 --from=builder /build/conan-output/opentdf-client/lib /build/tdf-client/lib
-#COPY --chown=0:0 --from=builder /build/conan-output/opentdf-client/include /build/tdf-client/include
 COPY --chown=0:0 --from=builder /root/.conan/data/opentdf-client/1.5.0/_/_/package/*/lib /build/tdf-client/lib
 COPY --chown=0:0 --from=builder /root/.conan/data/opentdf-client/1.5.0/_/_/package/*/include /build/tdf-client/include
 
