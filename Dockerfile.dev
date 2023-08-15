@@ -2,25 +2,30 @@
 # Git branch of `client-cpp`, rather than a published Conan release, which is handy for development.
 FROM python:3.9-bullseye AS builder
 # This can be a branchref OR a tagref
-ARG CLIENT_CPP_REF=1.3.2
-WORKDIR /build
 
-RUN git clone -b ${CLIENT_CPP_REF} 'https://github.com/opentdf/client-cpp.git'
+ARG VCLIENT_CPP_VER=1.5.0
 
-WORKDIR client-cpp/src/
+ARG VCONAN_VER=1.59.0
+ARG VCONAN_BRANCH_VERSION="True"
+ARG VCONAN_RECIPE_VER="main"
+
+WORKDIR /build 
 
 RUN apt-get update && apt-get install -y cmake
-RUN pip install conan
+RUN pip install conan==${VCONAN_VER}
 
-RUN conan install . --build=missing
+RUN git clone -b ${VCONAN_RECIPE_VER} 'https://github.com/opentdf/client-conan.git'
 
-RUN sh build-all.sh
+WORKDIR client-conan
+
+RUN conan create recipe/all opentdf-client/${VCLIENT_CPP_VER}@ -pr:b=default --build=opentdf-client --build=missing -o opentdf-client:branch_version=${VCONAN_BRANCH_VERSION}
 
 FROM golang:1.19-bullseye
 
-COPY --chown=0:0 --from=builder /build/client-cpp/src/build/lib /build/tdf-client/lib
-COPY --chown=0:0 --from=builder /build/client-cpp/src/lib/include /build/tdf-client/include
+WORKDIR /build
 
+COPY --chown=0:0 --from=builder /root/.conan/data/opentdf-client/1.5.0/_/_/package/*/lib /build/tdf-client/lib
+COPY --chown=0:0 --from=builder /root/.conan/data/opentdf-client/1.5.0/_/_/package/*/include /build/tdf-client/include
 
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
